@@ -13,7 +13,7 @@ use ndarray::SliceInfoElem;
 
 use crate::element::NdArrayElement;
 use crate::ops::macros::{keepdim, mean_dim, sum_dim};
-use crate::{reshape, tensor::NdArrayTensor};
+use crate::tensor::NdArrayTensor;
 
 pub struct NdArrayOps<E> {
     e: PhantomData<E>,
@@ -54,12 +54,19 @@ where
         tensor: NdArrayTensor<E, D1>,
         shape: Shape<D2>,
     ) -> NdArrayTensor<E, D2> {
-        reshape!(
-            ty E,
-            shape shape,
-            array tensor.array,
-            d D2
-        )
+        let shape = shape.dims.to_vec();
+        let array = tensor.array;
+
+        let safe_reshape = array.is_standard_layout()
+            || (array.ndim() > 1 && array.raw_view().reversed_axes().is_standard_layout());
+
+        let array = if safe_reshape {
+            array.into_shape(shape).unwrap()
+        } else {
+            array.to_shape(shape).unwrap().into_owned().into_shared()
+        };
+
+        NdArrayTensor { array }
     }
 
     pub fn cat<const D: usize>(

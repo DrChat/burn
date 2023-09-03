@@ -34,84 +34,17 @@ mod utils {
     }
 }
 
-/// Converts a slice of usize to a typed dimension.
-#[macro_export(local_inner_macros)]
-macro_rules! to_typed_dims {
-    (
-        $n:expr,
-        $dims:expr,
-        justdim
-    ) => {{
-        let mut dims = [0; $n];
-        for i in 0..$n {
-            dims[i] = $dims[i];
-        }
-        let dim: Dim<[usize; $n]> = Dim(dims);
-        dim
-    }};
-}
-
-/// Reshapes an array into a tensor.
-#[macro_export(local_inner_macros)]
-macro_rules! reshape {
-    (
-        ty $ty:ty,
-        n $n:expr,
-        shape $shape:expr,
-        array $array:expr
-    ) => {{
-        let dim = $crate::to_typed_dims!($n, $shape.dims, justdim);
-        let safe_into_shape =
-            $array.is_standard_layout() ||
-            (
-                $array.ndim() > 1 &&
-                $array.raw_view().reversed_axes().is_standard_layout()
-            );
-
-        let array: ndarray::ArcArray<$ty, Dim<[usize; $n]>> = match safe_into_shape {
-            true => $array
-                .into_shape(dim)
-                .expect("Safe to change shape without relayout")
-                .into_shared(),
-            false => $array.reshape(dim),
-        };
-        let array = array.into_dyn();
-
-        NdArrayTensor::new(array)
-    }};
-    (
-        ty $ty:ty,
-        shape $shape:expr,
-        array $array:expr,
-        d $D:expr
-    ) => {{
-        match $D {
-            1 => reshape!(ty $ty, n 1, shape $shape, array $array),
-            2 => reshape!(ty $ty, n 2, shape $shape, array $array),
-            3 => reshape!(ty $ty, n 3, shape $shape, array $array),
-            4 => reshape!(ty $ty, n 4, shape $shape, array $array),
-            5 => reshape!(ty $ty, n 5, shape $shape, array $array),
-            6 => reshape!(ty $ty, n 6, shape $shape, array $array),
-            _ => core::panic!("NdArray supports arrays up to 6 dimensions, received: {}", $D),
-        }
-    }};
-}
-
 impl<E, const D: usize> NdArrayTensor<E, D>
 where
     E: Default + Clone,
 {
     pub fn from_data(data: Data<E, D>) -> NdArrayTensor<E, D> {
         let shape = data.shape.clone();
-        let to_array = |data: Data<E, D>| Array::from_iter(data.value).into_shared();
-        let array = to_array(data);
+        let array = Array::from_vec(data.value).into_shared();
 
-        reshape!(
-            ty E,
-            shape shape,
-            array array,
-            d D
-        )
+        NdArrayTensor {
+            array: array.into_shape(shape.dims.to_vec()).unwrap(),
+        }
     }
 }
 
