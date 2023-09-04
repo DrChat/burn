@@ -82,6 +82,8 @@ pub(crate) fn conv2d<E: FloatNdArrayElement>(
 
     let mut output = Array3::zeros(Dim([batch_size * out_channels, out_height, out_width]));
 
+    let start = std::time::Instant::now();
+
     run_par!(|| {
         iter_par!(output.axis_iter_mut(Axis(0)))
             .enumerate()
@@ -156,6 +158,14 @@ pub(crate) fn conv2d<E: FloatNdArrayElement>(
                 },
             );
     });
+
+    let groups = options.groups;
+    let elapsed = start.elapsed();
+    println!(
+        "{in_channels}x{in_height}x{in_width} (s {stride_height}x{stride_width}) * {kernel_height}x{kernel_width} (d {dilation_height}x{dilation_width}) -> {batch_size}x{groups} {out_channels}x{out_height}x{out_width}: {}.{:03}",
+        elapsed.as_secs(),
+        elapsed.subsec_millis()
+    );
 
     let output = output
         .into_shape([batch_size, out_channels, out_height, out_width])

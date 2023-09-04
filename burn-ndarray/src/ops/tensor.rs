@@ -329,16 +329,16 @@ impl<E: FloatNdArrayElement> TensorOps<NdArrayBackend<E>> for NdArrayBackend<E> 
         NdArrayMathOps::argmin(tensor, dim)
     }
 
-    fn exp<const D: usize>(tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, D> {
-        let array = tensor.array.mapv_into(|a| a.exp_elem()).into_shared();
+    fn exp<const D: usize>(mut tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, D> {
+        tensor.array.par_mapv_inplace(|a| a.exp_elem());
 
-        NdArrayTensor::new(array)
+        tensor
     }
 
-    fn log<const D: usize>(tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, D> {
-        let array = tensor.array.mapv_into(|a| a.log_elem()).into_shared();
+    fn log<const D: usize>(mut tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, D> {
+        tensor.array.par_mapv_inplace(|a| a.log_elem());
 
-        NdArrayTensor::new(array)
+        tensor
     }
 
     fn log1p<const D: usize>(tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, D> {
