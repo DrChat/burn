@@ -229,7 +229,7 @@ pub trait TensorOps<B: Backend> {
     ) -> B::TensorPrimitive<D> {
         let mut shape = B::shape(&tensor);
         if shape.dims[dim] != 1 {
-            panic!("Can only repeat dimension with dim=1");
+            panic!("Can only repeat dimension with dim=1 (dim={})", shape.dims[dim]);
         }
         shape.dims[dim] = times;
 
