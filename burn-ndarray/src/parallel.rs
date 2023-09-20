@@ -1,3 +1,25 @@
+//! Compatibility shims for rayon traits, depending on whether or not `std` is enabled.
+
+#[cfg(feature = "std")]
+mod helper {
+    pub use rayon::prelude::*;
+}
+
+#[cfg(not(feature = "std"))]
+mod helper {
+    pub trait IntoParallelIterator {
+        fn into_par_iter(self) -> Self;
+    }
+
+    impl<I: IntoIterator> IntoParallelIterator for I {
+        fn into_par_iter(self) -> I::IntoIter {
+            self.into_iter()
+        }
+    }
+}
+
+pub use helper::*;
+
 /// Macro for running a function in parallel.
 #[macro_export(local_inner_macros)]
 macro_rules! run_par {
@@ -25,6 +47,9 @@ macro_rules! iter_par {
         $iter:expr
     ) => {{
         #[cfg(feature = "std")]
+        use ::rayon::prelude::*;
+
+        #[cfg(feature = "std")]
         let output = $iter.into_par_iter();
 
         #[cfg(not(feature = "std"))]
@@ -40,6 +65,9 @@ macro_rules! iter_range_par {
     (
         $start:expr, $end:expr
     ) => {{
+        #[cfg(feature = "std")]
+        use ::rayon::prelude::*;
+
         #[cfg(feature = "std")]
         let output = ($start..$end).into_par_iter();
 
