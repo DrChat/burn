@@ -198,6 +198,22 @@ where
         NdArrayTensor::from_data(data)
     }
 
+    pub fn max_dim<const D: usize>(tensor: NdArrayTensor<E, D>, dim: usize) -> NdArrayTensor<E, D> {
+        let mut reshape = tensor.array.shape().to_vec();
+        reshape[dim] = 1;
+
+        let array = tensor.array.map_axis(Axis(dim), |arr| {
+            arr.iter()
+                .fold(arr[0], |acc, e| if *e > acc { *e } else { acc })
+        });
+
+        let array = array.into_shape(Dim(reshape.as_slice())).unwrap();
+
+        NdArrayTensor {
+            array: array.into_shared(),
+        }
+    }
+
     pub fn mean_dim<const D: usize>(
         tensor: NdArrayTensor<E, D>,
         dim: usize,

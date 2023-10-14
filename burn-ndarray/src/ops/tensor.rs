@@ -301,6 +301,10 @@ impl<E: FloatNdArrayElement> TensorOps<NdArrayBackend<E>> for NdArrayBackend<E> 
         NdArrayMathOps::sum(tensor)
     }
 
+    fn max_dim<const D: usize>(tensor: NdArrayTensor<E, D>, dim: usize) -> NdArrayTensor<E, D> {
+        NdArrayMathOps::max_dim(tensor, dim)
+    }
+
     fn mean_dim<const D: usize>(tensor: NdArrayTensor<E, D>, dim: usize) -> NdArrayTensor<E, D> {
         NdArrayMathOps::mean_dim(tensor, dim)
     }
